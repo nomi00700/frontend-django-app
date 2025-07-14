@@ -65,7 +65,7 @@ def home(request):
             <p class="success">✅ VPC: noumantest</p>
             <p class="success">✅ Infrastructure deployed via Terraform</p>
             <p class="success">✅ Django server running on port 8000</p>
-            <p class="success">✅ Frontend repository working independently!</p>
+            <p class="success">✅ Frontend branch working perfectly!</p>
             <p>Your AWS infrastructure is now live and ready to use!</p>
         </div>
     </body>
