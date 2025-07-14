@@ -67,6 +67,7 @@ def home(request):
             <p class="success">✅ Django server running on port 8000</p>
             <p class="success">✅ Frontend branch working perfectly!</p>
             <p>Your AWS infrastructure is now live and ready to use!</p>
+            <p> this is the 1st commit test </p>
         </div>
     </body>
     </html>
