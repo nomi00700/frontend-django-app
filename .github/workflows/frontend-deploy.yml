@@ -3,13 +3,13 @@ name: Frontend Auto-Deploy
 on:
   push:
     branches:
-      - main
+      - frontend
     paths:
       - 'django_app.py'
       - 'requirements.txt'
   pull_request:
     branches:
-      - main
+      - frontend
     paths:
       - 'django_app.py'
       - 'requirements.txt'
