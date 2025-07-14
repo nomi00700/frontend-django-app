@@ -1,0 +1,78 @@
+name: Frontend Auto-Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'django_app.py'
+      - 'requirements.txt'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'django_app.py'
+      - 'requirements.txt'
+
+env:
+  EC2_HOST: "54.198.242.233"
+  EC2_USER: "ubuntu"
+  APP_PATH: "/home/ubuntu/django_app.py"
+  SERVICE_NAME: "django-app"
+
+jobs:
+  deploy:
+    name: Deploy Frontend to EC2
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout frontend code
+      uses: actions/checkout@v4
+      
+    - name: Setup SSH Key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ env.EC2_HOST }} >> ~/.ssh/known_hosts
+        
+    - name: Test Connection
+      run: |
+        ssh -i ~/.ssh/id_rsa ${{ env.EC2_USER }}@${{ env.EC2_HOST }} "echo 'Connection successful'"
+        
+    - name: Stop Django Service
+      run: |
+        ssh -i ~/.ssh/id_rsa ${{ env.EC2_USER }}@${{ env.EC2_HOST }} "sudo pkill -f 'python.*django_app.py' || true"
+        
+    - name: Deploy Frontend Code
+      run: |
+        scp -i ~/.ssh/id_rsa django_app.py ${{ env.EC2_USER }}@${{ env.EC2_HOST }}:${{ env.APP_PATH }}
+        
+    - name: Install Dependencies
+      run: |
+        ssh -i ~/.ssh/id_rsa ${{ env.EC2_USER }}@${{ env.EC2_HOST }} "
+          cd /home/ubuntu &&
+          pip3 install -r requirements.txt 2>/dev/null || pip3 install django
+        "
+        
+    - name: Start Django Service
+      run: |
+        ssh -i ~/.ssh/id_rsa ${{ env.EC2_USER }}@${{ env.EC2_HOST }} "
+          cd /home/ubuntu &&
+          nohup python3 django_app.py runserver 0.0.0.0:8000 > django.log 2>&1 &
+          sleep 5
+        "
+        
+    - name: Verify Deployment
+      run: |
+        sleep 10
+        curl -f http://${{ env.EC2_HOST }}:8000 || exit 1
+        echo "Frontend deployment successful!"
+        
+    - name: Update Deployment Status
+      run: |
+        echo "## 🚀 Frontend Deployed Successfully" >> $GITHUB_STEP_SUMMARY
+        echo "### Application Details:" >> $GITHUB_STEP_SUMMARY
+        echo "- **URL**: http://${{ env.EC2_HOST }}:8000" >> $GITHUB_STEP_SUMMARY
+        echo "- **Branch**: frontend" >> $GITHUB_STEP_SUMMARY
+        echo "- **Deployment Time**: $(date)" >> $GITHUB_STEP_SUMMARY
